@@ -149,6 +149,10 @@
 #define CONFIG_MMC_SUNXI_SLOT		0
 #endif
 
+#if defined(CONFIG_ENV_IS_IN_SPI_FLASH)
+#define CONFIG_ENV_SECT_SIZE		(4 * 1024)
+#endif
+
 #if defined(CONFIG_ENV_IS_IN_MMC)
 #if defined(CONFIG_MACH_SUN8I_H3_NANOPI) || defined(CONFIG_MACH_SUN50I_H5_NANOPI)
 #define CONFIG_SYS_MMC_ENV_DEV		0	/* first detected MMC controller */

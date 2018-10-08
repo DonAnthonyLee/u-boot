@@ -502,6 +502,7 @@ static int init_env_boot_mmc(void)
 	char boot_mmc_buf[24] = {0};
 	boot_source = readb(SPL_ADDR + 0x28);
 
+#if 0
 	if (boot_source == SUNXI_BOOTED_FROM_MMC0) {
 		sprintf(boot_mmc_buf, "%s", "0");
 	} else if (boot_source == SUNXI_BOOTED_FROM_MMC2) {
@@ -514,6 +515,8 @@ static int init_env_boot_mmc(void)
 		printf("env_set boot_mmc=%s fail\n", boot_mmc_buf);
 		hang();
 	}
+#endif
+
 	return 0;
 }
 #endif
@@ -855,13 +858,13 @@ int nanopi_get_board(void)
 			strcpy(pin[0], "PC6");
 			extra_gpio = nanopi_read_extra_gpio(pin, 1, SUNXI_GPIO_PULL_DOWN);
 			switch (boot_source) {
-			case SUNXI_BOOTED_FROM_MMC0:
+			case SUNXI_BOOTED_FROM_MMC2:
+				has_emmc = 1;
+				break;
+			default:
 				printf("Detecting eMMC...\n");
 				has_emmc = !run_command("mmc dev 1", 0);
 				run_command("mmc dev 0", 0);
-				break;
-			case SUNXI_BOOTED_FROM_MMC2:
-				has_emmc = 1;
 				break;
 			}
 			printf("eMMC %s, PC6=%d\n", has_emmc?"exist":"not exist", extra_gpio);

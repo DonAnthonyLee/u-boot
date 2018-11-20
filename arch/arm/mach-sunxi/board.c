@@ -345,7 +345,7 @@ void board_init_f(ulong dummy)
 #endif
 	sunxi_board_init();
 
-#ifdef CONFIG_SPL_BUILD
+#if 0//def CONFIG_SPL_BUILD
     spl_mem_test();
 #endif
 }

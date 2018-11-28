@@ -21,6 +21,9 @@
 
 #define SUNXI_SPI_MAX_RATE (24 * 1000 * 1000)
 #define SUNXI_SPI_MIN_RATE (3 * 1000)
+#define SUNXI_SPI_MAX_CS_COUNT 4
+
+#define SPI_CS_GPIOS_PREFERED 0x01
 
 struct sunxi_spi_platdata {
 	struct sunxi_spi_regs *regs;
@@ -33,6 +36,8 @@ struct sunxi_spi_priv {
 	struct sunxi_spi_regs *regs;
 	unsigned int max_freq;
 	unsigned int last_transaction_us;
+	unsigned int flags;
+	struct gpio_desc cs_gpios[SUNXI_SPI_MAX_CS_COUNT];
 };
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -163,6 +168,11 @@ static void sunxi_spi_cs_activate(struct udevice *dev, unsigned int cs)
 
 	debug("%s: activate cs: %u, bus: '%s'\n", __func__, cs, bus->name);
 
+	if (priv->flags & SPI_CS_GPIOS_PREFERED) {
+		if (dm_gpio_is_valid(&priv->cs_gpios[cs]))
+			dm_gpio_set_value(&priv->cs_gpios[cs], 0);
+	}
+
 	reg = readl(&priv->regs->xfer_ctl);
 	reg &= ~(SUNXI_SPI_CTL_CS_MASK | SUNXI_SPI_CTL_CS_LEVEL);
 	reg |= SUNXI_SPI_CTL_CS(cs);
@@ -180,7 +190,12 @@ static void sunxi_spi_cs_deactivate(struct udevice *dev, unsigned int cs)
 	uint32_t reg;
 
 	debug("%s: deactivate cs: %u, bus: '%s'\n", __func__, cs, bus->name);
-	
+
+	if (priv->flags & SPI_CS_GPIOS_PREFERED) {
+		if (dm_gpio_is_valid(&priv->cs_gpios[cs]))
+			dm_gpio_set_value(&priv->cs_gpios[cs], 1);
+	}
+
 	reg = readl(&priv->regs->xfer_ctl);
 	reg &= ~SUNXI_SPI_CTL_CS_MASK;
 	reg |= SUNXI_SPI_CTL_CS_LEVEL;
@@ -217,11 +232,24 @@ static int sunxi_spi_probe(struct udevice *bus)
 {
 	struct sunxi_spi_platdata *plat = dev_get_platdata(bus);
 	struct sunxi_spi_priv *priv = dev_get_priv(bus);
+	int i, err;
 
 	debug("%s: probe\n", __func__);
 
 	priv->regs = plat->regs;
 	priv->last_transaction_us = timer_get_us();
+
+	err = gpio_request_list_by_name(bus, "cs-gpios", priv->cs_gpios,
+					ARRAY_SIZE(priv->cs_gpios), 0);
+	if (err > 0) {
+		priv->flags |= SPI_CS_GPIOS_PREFERED;
+
+		for(i = 0; i < ARRAY_SIZE(priv->cs_gpios); i++) {
+			if (dm_gpio_is_valid(&priv->cs_gpios[i]))
+				dm_gpio_set_dir_flags(&priv->cs_gpios[i],
+						      GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE);
+		}
+	}
 
 	return 0;
 }

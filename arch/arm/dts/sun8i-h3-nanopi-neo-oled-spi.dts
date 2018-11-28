@@ -89,7 +89,13 @@
 	};
 
 	spi0_pins: spi0@0 {
-		pins = "PC0", "PC1", "PC2", "PC3";
+		pins = "PC0", "PC1", "PC2";
+		drive-strength = <10>;
+		bias-disable;
+	};
+
+	spi0_cs_pins: spi0_cs_pins {
+		pins = "PC3", "PA6";
 		drive-strength = <10>;
 		bias-disable;
 	};
@@ -124,13 +130,20 @@
 
 &spi0 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&spi0_pins>;
+	pinctrl-0 = <&spi0_pins>, <&spi0_cs_pins>;
+	cs-gpios = <&pio 2 3 GPIO_ACTIVE_HIGH>, <&pio 0 6 GPIO_ACTIVE_HIGH>, <0>, <0>;
 	status = "okay";
 
 	spi-nor@0 {
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <24000000>;
 		reg = <0>;
+	};
+
+	spi-tft@1 {
+		compatible = "sitronix,st7735";
+		spi-max-frequency = <50000000>;
+		reg = <1>;
 	};
 };
 

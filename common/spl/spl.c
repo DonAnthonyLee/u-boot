@@ -347,10 +347,25 @@ static int boot_from_devices(struct spl_image_info *spl_image,
 
 		loader = spl_ll_find_loader(spl_boot_list[i]);
 #if defined(CONFIG_SPL_SERIAL_SUPPORT) && defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
-		if (loader)
+		if (loader) {
 			printf("Trying to boot from %s\n", loader->name);
-		else
+#if defined(CONFIG_MACH_SUN8I_H3_NANOPI) || defined(CONFIG_MACH_SUN50I_H5_NANOPI)
+			printf("Boot device: ");
+			switch(spl_boot_list[i]) {
+				case BOOT_DEVICE_MMC1:
+					printf("sd\n");
+					break;
+				case BOOT_DEVICE_MMC2:
+					printf("emmc\n");
+					break;
+				default:
+					printf("untest, may occur error\n");
+					break;
+#endif
+			}
+		} else {
 			puts("SPL: Unsupported Boot Device!\n");
+		}
 #endif
 		if (loader && !spl_load_image(spl_image, loader))
 			return 0;

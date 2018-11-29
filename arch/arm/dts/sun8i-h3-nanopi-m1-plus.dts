@@ -43,22 +43,60 @@
 #include "sun8i-h3-nanopi.dtsi"
 
 / {
-    model = "FriendlyElec NanoPi H3";
-    compatible = "friendlyarm,nanopi-m1-plus", "allwinner,sun8i-h3";
+	model = "FriendlyElec NanoPi H3";
+	compatible = "friendlyarm,nanopi-m1-plus", "allwinner,sun8i-h3";
+
+
+	reg_gmac_3v3: gmac-3v3 {
+		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&gmac_power_pin_nanopi>;
+		regulator-name = "gmac-3v3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		startup-delay-us = <100000>;
+		enable-active-high;
+		gpio = <&pio 3 6 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &ehci1 {
-    status = "okay";
+	status = "okay";
 };
 
 &ehci2 {
-    status = "okay";
+	status = "okay";
 };
 
 &ohci1 {
-    status = "okay";
+	status = "okay";
 };
 
 &ohci2 {
-    status = "okay";
+	status = "okay";
+};
+
+&pio {
+	leds_npi: led_pins@0 {
+		pins = "PA10";
+		function = "gpio_out";
+	};
+
+	gmac_power_pin_nanopi: gmac_power_pin@0 {
+		pins = "PD6";
+		function = "gpio_out";
+	};
+};
+
+&emac {
+	pinctrl-names = "default";
+	pinctrl-0 = <&emac_rgmii_pins>;
+	phy-supply = <&reg_gmac_3v3>;
+	phy-mode = "rgmii";
+	phy = <&phy1>;
+	status = "okay";
+
+	phy1: ethernet-phy@1 {
+		reg = <7>;
+	};
 };

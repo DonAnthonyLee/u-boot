@@ -30,11 +30,7 @@ void mctl_set_timing_params(uint16_t socid, struct dram_para *para)
 	u8 tckesr	= 4;
 	u8 trasmax	= 24;
 
-#ifdef CONFIG_MACH_SUN8I_H3_NANOPI
-	u8 tcl		= 4; /* CL 8 */
-#else
 	u8 tcl		= 6; /* CL 12 */
-#endif
 	u8 tcwl		= 4; /* CWL 8 */
 	u8 t_rdata_en	= 4;
 	u8 wr_latency	= 2;
@@ -48,12 +44,8 @@ void mctl_set_timing_params(uint16_t socid, struct dram_para *para)
 	u8 twr2rd	= tcwl + 2 + twtr;	/* WL + BL / 2 + tWTR */
 	u8 trd2wr	= tcl + 2 + 1 - tcwl;	/* RL + BL / 2 + 2 - WL */
 
-	/* set mode register */	
-#ifdef CONFIG_MACH_SUN8I_H3_NANOPI
-	writel(0x1c40, &mctl_ctl->mr[0]);	/* CL=8, WR=12 */
-#else
+	/* set mode register */
 	writel(0x1c70, &mctl_ctl->mr[0]);	/* CL=11, WR=12 */
-#endif
 	writel(0x40, &mctl_ctl->mr[1]);
 	writel(0x18, &mctl_ctl->mr[2]);		/* CWL=8 */
 	writel(0x0, &mctl_ctl->mr[3]);

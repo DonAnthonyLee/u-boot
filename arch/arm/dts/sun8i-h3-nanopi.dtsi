@@ -51,6 +51,7 @@
 / {
 	aliases {
 		serial0 = &uart0;
+		i2c5 = &r_i2c;
 	};
 
 	chosen {
@@ -86,6 +87,13 @@
 			linux,code = <KEY_POWER>;
 			gpios = <&r_pio 0 3 GPIO_ACTIVE_LOW>;
 		};
+	};
+	r_i2c: i2c@01f02400 {
+		compatible = "allwinner,sun6i-a31-i2c";
+		reg = <0x01f02400 0x400>;
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 };
 

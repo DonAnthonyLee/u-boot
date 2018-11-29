@@ -235,7 +235,7 @@ int board_init(void)
 #endif
 
 #ifndef CONFIG_SPL_BUILD
-#if defined(CONFIG_MACH_SUN50I_H5_NANOPI) || defined(CONFIG_MACH_SUN8I_H5_NANOPI)
+#if defined(CONFIG_MACH_SUN8I_H3_NANOPI) || defined(CONFIG_MACH_SUN50I_H5_NANOPI)
 #include <friendlyelec/boardtype.h>
 #include <i2c.h>
 
@@ -256,7 +256,8 @@ int board_init(void)
 			u8 data = SY8106A_VOUT1_1200MV; 	/* 1.20 V */
 			if (!strcmp(nanopi_board[npi_boardtype], "nanopi-neo-core2") 
 				|| !strcmp(nanopi_board[npi_boardtype], "nanopi-m1-plus2")
-				|| !strcmp(nanopi_board[npi_boardtype], "nanopi-k1-plus")) {
+				|| !strcmp(nanopi_board[npi_boardtype], "nanopi-k1-plus")
+				|| !strcmp(nanopi_board[npi_boardtype], "nanopi-hero")) {
 				struct udevice *i2c_dev;
 				int busnum = 5;
 				ret = i2c_get_chip_for_busnum(busnum, SY8106A_I2C_ADDR, 1, &i2c_dev);
@@ -285,7 +286,7 @@ int board_init(void)
 				break;
 			}
 			else {
-				printf("%s: fail to init sy8106a for %s\n", __func__, nanopi_board[npi_boardtype]);
+				printf("%s: fail to set CPUFreq %d\n", __func__, CONFIG_SYS_CLK_FREQ);
 				if (i == 3)
 					hang();
 			}
@@ -648,7 +649,7 @@ void sunxi_board_init(void)
 	 * assured it's being powered with suitable core voltage
 	 */
 	if (!power_failed)
-#if defined(CONFIG_MACH_SUN50I_H5_NANOPI) || defined(CONFIG_MACH_SUN8I_H3_NANOPI)
+#if defined(CONFIG_MACH_SUN8I_H3_NANOPI) || defined(CONFIG_MACH_SUN50I_H5_NANOPI)
 		printf("CPU Freq: %dMHz\n", clock_get_pll1()/1000000);
 #else
 		clock_set_pll1(CONFIG_SYS_CLK_FREQ);

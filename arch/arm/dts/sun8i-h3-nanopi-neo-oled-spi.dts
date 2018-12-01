@@ -89,15 +89,17 @@
 	};
 
 	spi0_pins: spi0@0 {
-		pins = "PC0", "PC1", "PC2";
-		drive-strength = <10>;
-		bias-disable;
+		allwinner,pins = "PC0", "PC1", "PC2";
+		allwinner,function = "spi0";
+		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
+		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
 	};
 
 	spi0_cs_pins: spi0_cs_pins {
-		pins = "PC3", "PA6";
-		drive-strength = <10>;
-		bias-disable;
+		allwinner,pins = "PC3", "PA6";
+		allwinner,function = "gpio_out";
+		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
+		allwinner,pull = <SUN4I_PINCTRL_PULL_UP>;
 	};
 };
 
@@ -142,7 +144,7 @@
 
 	spi-tft@1 {
 		compatible = "sitronix,st7735";
-		spi-max-frequency = <50000000>;
+		spi-max-frequency = <24000000>;
 		reg = <1>;
 	};
 };

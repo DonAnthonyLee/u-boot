@@ -169,8 +169,10 @@ static void sunxi_spi_cs_activate(struct udevice *dev, unsigned int cs)
 	debug("%s: activate cs: %u, bus: '%s'\n", __func__, cs, bus->name);
 
 	if (priv->flags & SPI_CS_GPIOS_PREFERED) {
-		if (dm_gpio_is_valid(&priv->cs_gpios[cs]))
+		if (dm_gpio_is_valid(&priv->cs_gpios[cs])) {
 			dm_gpio_set_value(&priv->cs_gpios[cs], 0);
+			ndelay(150);
+		}
 	}
 
 	reg = readl(&priv->regs->xfer_ctl);
@@ -192,12 +194,15 @@ static void sunxi_spi_cs_deactivate(struct udevice *dev, unsigned int cs)
 	debug("%s: deactivate cs: %u, bus: '%s'\n", __func__, cs, bus->name);
 
 	if (priv->flags & SPI_CS_GPIOS_PREFERED) {
-		if (dm_gpio_is_valid(&priv->cs_gpios[cs]))
+		if (dm_gpio_is_valid(&priv->cs_gpios[cs])) {
 			dm_gpio_set_value(&priv->cs_gpios[cs], 1);
+			ndelay(150);
+		}
 	}
 
 	reg = readl(&priv->regs->xfer_ctl);
 	reg &= ~SUNXI_SPI_CTL_CS_MASK;
+	reg |= SUNXI_SPI_CTL_CS(cs);
 	reg |= SUNXI_SPI_CTL_CS_LEVEL;
 	writel(reg, &priv->regs->xfer_ctl);
 
@@ -245,9 +250,11 @@ static int sunxi_spi_probe(struct udevice *bus)
 		priv->flags |= SPI_CS_GPIOS_PREFERED;
 
 		for(i = 0; i < ARRAY_SIZE(priv->cs_gpios); i++) {
-			if (dm_gpio_is_valid(&priv->cs_gpios[i]))
-				dm_gpio_set_dir_flags(&priv->cs_gpios[i],
-						      GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE);
+			if (dm_gpio_is_valid(&priv->cs_gpios[i])) {
+				dm_gpio_set_dir_flags(&priv->cs_gpios[i], GPIOD_IS_OUT);
+				dm_gpio_set_value(&priv->cs_gpios[i], 1);
+				ndelay(150);
+			}
 		}
 	}
 

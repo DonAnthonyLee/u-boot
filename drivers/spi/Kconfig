@@ -134,6 +134,7 @@ config STM32_QSPI
 
 config SUNXI_SPI
 	bool "Allwinner SoCs SPI controller"
+	select DM_GPIO
 	help
 	  SPI driver for Allwinner sun4i, sun5i, sun7i and sun8i SoCs
 

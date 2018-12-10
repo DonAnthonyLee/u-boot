@@ -44,13 +44,15 @@ DECLARE_GLOBAL_DATA_PTR;
 
 static int sunxi_spi_parse_pins(struct udevice *dev)
 {
+	struct sunxi_spi_priv *priv = dev_get_priv(dev);
 	const void *fdt = gd->fdt_blob;
 	const char *pin_name;
 	const fdt32_t *list;
 	u32 phandle;
-	int drive, pull = 0, pin, i;
+	int drive, pull = 0, pin, i, k;
 	int offset;
 	int size;
+	struct gpio_desc desc;
 
 	list = fdt_getprop(fdt, dev_of_offset(dev), "pinctrl-0", &size);
 	if (!list) {
@@ -110,6 +112,16 @@ static int sunxi_spi_parse_pins(struct udevice *dev)
 			pin = name_to_gpio(pin_name);
 			if (pin < 0)
 				break;
+
+			if (dm_gpio_lookup_name(pin_name, &desc) == 0) {
+				for (k = 0; k < ARRAY_SIZE(priv->cs_gpios); k++) {
+					if (!dm_gpio_is_valid(&priv->cs_gpios[k])) continue;
+					if (gpio_get_number(&desc) == gpio_get_number(&priv->cs_gpios[k])) break;
+				}
+
+				if (k < ARRAY_SIZE(priv->cs_gpios)) /* cs-gpio pin */
+					break;
+			}
 
 			sunxi_gpio_set_cfgpin(pin, SUNXI_GPC_SPI0);
 			sunxi_gpio_set_drv(pin, drive);
@@ -222,7 +234,7 @@ static int sunxi_spi_ofdata_to_platdata(struct udevice *bus)
 
 	plat->regs = (struct sunxi_spi_regs *)devfdt_get_addr(bus);
 	plat->activate_delay_us = fdtdec_get_int(
-		blob, node, "spi-activate_delay", 0);
+		blob, node, "spi-activate-delay", 0);
 	plat->deactivate_delay_us = fdtdec_get_int(
 		blob, node, "spi-deactivate-delay", 0);
 
@@ -249,7 +261,7 @@ static int sunxi_spi_probe(struct udevice *bus)
 	if (err > 0) {
 		priv->flags |= SPI_CS_GPIOS_PREFERED;
 
-		for(i = 0; i < ARRAY_SIZE(priv->cs_gpios); i++) {
+		for (i = 0; i < ARRAY_SIZE(priv->cs_gpios); i++) {
 			if (dm_gpio_is_valid(&priv->cs_gpios[i])) {
 				dm_gpio_set_dir_flags(&priv->cs_gpios[i], GPIOD_IS_OUT);
 				dm_gpio_set_value(&priv->cs_gpios[i], 1);

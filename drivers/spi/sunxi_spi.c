@@ -120,7 +120,7 @@ static int sunxi_spi_parse_pins(struct udevice *dev)
 				}
 
 				if (k < ARRAY_SIZE(priv->cs_gpios)) /* cs-gpio pin */
-					break;
+					continue;
 			}
 
 			sunxi_gpio_set_cfgpin(pin, SUNXI_GPC_SPI0);

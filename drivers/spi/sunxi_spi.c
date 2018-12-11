@@ -114,12 +114,12 @@ static int sunxi_spi_parse_pins(struct udevice *dev)
 				break;
 
 			if (dm_gpio_lookup_name(pin_name, &desc) == 0) {
-				for (k = 0; k < ARRAY_SIZE(priv->cs_gpios); k++) {
+				for (k = 0; k < SUNXI_SPI_MAX_CS_COUNT; k++) {
 					if (!dm_gpio_is_valid(&priv->cs_gpios[k])) continue;
 					if (gpio_get_number(&desc) == gpio_get_number(&priv->cs_gpios[k])) break;
 				}
 
-				if (k < ARRAY_SIZE(priv->cs_gpios)) /* cs-gpio pin */
+				if (k < SUNXI_SPI_MAX_CS_COUNT) /* cs-gpio pin */
 					continue;
 			}
 
@@ -182,7 +182,8 @@ static void sunxi_spi_cs_activate(struct udevice *dev, unsigned int cs)
 
 	if (priv->flags & SPI_CS_GPIOS_PREFERED) {
 		if (dm_gpio_is_valid(&priv->cs_gpios[cs])) {
-			dm_gpio_set_value(&priv->cs_gpios[cs], 0);
+			gpio_get_ops(priv->cs_gpios[cs].dev)->direction_output(priv->cs_gpios[cs].dev, priv->cs_gpios[cs].offset,
+									       (priv->cs_gpios[cs].flags & GPIOD_ACTIVE_LOW) ? 1 : 0);
 			ndelay(150);
 		}
 	}
@@ -207,7 +208,8 @@ static void sunxi_spi_cs_deactivate(struct udevice *dev, unsigned int cs)
 
 	if (priv->flags & SPI_CS_GPIOS_PREFERED) {
 		if (dm_gpio_is_valid(&priv->cs_gpios[cs])) {
-			dm_gpio_set_value(&priv->cs_gpios[cs], 1);
+			gpio_get_ops(priv->cs_gpios[cs].dev)->direction_output(priv->cs_gpios[cs].dev, priv->cs_gpios[cs].offset,
+									       (priv->cs_gpios[cs].flags & GPIOD_ACTIVE_LOW) ? 0 : 1);
 			ndelay(150);
 		}
 	}
@@ -257,16 +259,25 @@ static int sunxi_spi_probe(struct udevice *bus)
 	priv->last_transaction_us = timer_get_us();
 
 	err = gpio_request_list_by_name(bus, "cs-gpios", priv->cs_gpios,
-					ARRAY_SIZE(priv->cs_gpios), 0);
+					SUNXI_SPI_MAX_CS_COUNT, 0);
 	if (err > 0) {
 		priv->flags |= SPI_CS_GPIOS_PREFERED;
 
-		for (i = 0; i < ARRAY_SIZE(priv->cs_gpios); i++) {
+		for (i = 0; i < SUNXI_SPI_MAX_CS_COUNT; i++) {
 			if (dm_gpio_is_valid(&priv->cs_gpios[i])) {
 				dm_gpio_set_dir_flags(&priv->cs_gpios[i], GPIOD_IS_OUT);
 				dm_gpio_set_value(&priv->cs_gpios[i], 1);
 				ndelay(150);
+
+				/* for using GPIO directly in SPI driver */
+				dm_gpio_free(bus, &priv->cs_gpios[i]);
+			} else {
+				priv->cs_gpios[i].dev = NULL;
 			}
+		}
+	} else {
+		for (i = 0; i < SUNXI_SPI_MAX_CS_COUNT; i++) {
+			priv->cs_gpios[i].dev = NULL;
 		}
 	}
 

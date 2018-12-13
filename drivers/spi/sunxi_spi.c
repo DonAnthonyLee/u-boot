@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <spi.h>
 #include <fdt_support.h>
+#include <time.h>
 
 #include <asm/bitops.h>
 #include <asm/gpio.h>
@@ -355,6 +356,8 @@ static int sunxi_spi_xfer(struct udevice *dev, unsigned int bitlen,
 	size_t len = bitlen / 8;
 	size_t i, nbytes;
 	char byte;
+	unsigned long timeout;
+	int err = 0;
 
 	if (bitlen % 8) {
 		debug("%s: non byte-aligned SPI transfer.\n", __func__);
@@ -371,10 +374,16 @@ static int sunxi_spi_xfer(struct udevice *dev, unsigned int bitlen,
 		sunxi_spi_write(dev, tx_buf, nbytes);
 		setbits_le32(&priv->regs->xfer_ctl, SUNXI_SPI_CTL_XCH);
 
+		timeout = timer_get_us() + 200000;
 		while (((readl(&priv->regs->fifo_sta) &
 			SUNXI_SPI_FIFO_RF_CNT_MASK) >>
-			SUNXI_SPI_FIFO_RF_CNT_BITS) < nbytes)
-			;
+			SUNXI_SPI_FIFO_RF_CNT_BITS) < nbytes) {
+			if (time_after(timer_get_us(), timeout)) {
+				err = -1;
+				break;
+			}
+		}
+		if (err != 0) break;
 
 		for (i = 0; i < nbytes; ++i) {
 			byte = readb(&priv->regs->rx_data);
@@ -390,7 +399,7 @@ static int sunxi_spi_xfer(struct udevice *dev, unsigned int bitlen,
 	if (flags & SPI_XFER_END)
 		sunxi_spi_cs_deactivate(dev, slave_plat->cs);
 
-	return 0;
+	return err;
 }
 
 static int sunxi_spi_set_speed(struct udevice *bus, uint speed)

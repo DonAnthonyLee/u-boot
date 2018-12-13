@@ -53,7 +53,6 @@
 
 	aliases {
 		serial0 = &uart0;
-		i2c0 = &i2c_gpio;
 		i2c5 = &r_i2c;
 	};
 
@@ -87,14 +86,6 @@
 			label = "OLED_K3";
 			gpios = <&pio 0 3 GPIO_ACTIVE_HIGH>;
 		};
-	};
-
-	i2c_gpio: i2c-gpio@0 {
-		compatible = "i2c-gpio";
-		gpios = <&pio 0 12 GPIO_ACTIVE_HIGH>,
-			<&pio 0 11 GPIO_ACTIVE_HIGH>;
-		i2c-gpio,delay-us = <1>;
-		status = "okay";
 	};
 
 	r_i2c: i2c@01f02400 {
@@ -168,6 +159,11 @@
 &uart0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart0_pins_a>;
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <400000>;
 	status = "okay";
 };
 

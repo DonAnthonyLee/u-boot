@@ -150,6 +150,8 @@ static int do_spi_flash_probe(int argc, char * const argv[])
 	flash = new;
 #endif
 
+	env_set_hex("sfsize", (flash ? flash->size : 0));
+
 	return 0;
 }
 

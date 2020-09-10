@@ -124,7 +124,14 @@ static int sunxi_spi_parse_pins(struct udevice *dev)
 					continue;
 			}
 
-			sunxi_gpio_set_cfgpin(pin, SUNXI_GPC_SPI0);
+			switch (devfdt_get_addr(dev)) {
+				case SUNXI_SPI1_BASE:
+					sunxi_gpio_set_cfgpin(pin, SUNXI_GPA_SPI1);
+					break;
+
+				default:
+					sunxi_gpio_set_cfgpin(pin, SUNXI_GPC_SPI0);
+			}
 			sunxi_gpio_set_drv(pin, drive);
 			sunxi_gpio_set_pull(pin, pull);
 		}
@@ -136,29 +143,31 @@ static void sunxi_spi_enable_clock(struct udevice *bus)
 {
 	struct sunxi_ccm_reg * const ccm =
 		(struct sunxi_ccm_reg * const)SUNXI_CCM_BASE;
+	int spi1 = (devfdt_get_addr(bus) == SUNXI_SPI1_BASE) ? 1 : 0;
 
 #if defined(CONFIG_MACH_SUN6I) || defined(CONFIG_MACH_SUN8I) || \
 	defined(CONFIG_MACH_SUN9I) || defined(CONFIG_MACH_SUN50I)
 	setbits_le32(&ccm->ahb_reset0_cfg,
-		(1 << AHB_GATE_OFFSET_SPI0));
+		(1 << (spi1 ? AHB_GATE_OFFSET_SPI1 : AHB_GATE_OFFSET_SPI0)));
 #endif
 
-	setbits_le32(&ccm->ahb_gate0, (1 << AHB_GATE_OFFSET_SPI0));
-	writel((1 << 31), &ccm->spi0_clk_cfg);
+	setbits_le32(&ccm->ahb_gate0, (1 << (spi1 ? AHB_GATE_OFFSET_SPI1 : AHB_GATE_OFFSET_SPI0)));
+	writel((1 << 31), spi1 ? &ccm->spi1_clk_cfg : &ccm->spi0_clk_cfg);
 }
 
-static void sunxi_spi_disable_clock(void)
+static void sunxi_spi_disable_clock(struct udevice *bus)
 {
 	struct sunxi_ccm_reg * const ccm =
 		(struct sunxi_ccm_reg * const)SUNXI_CCM_BASE;
+	int spi1 = (devfdt_get_addr(bus) == SUNXI_SPI1_BASE) ? 1 : 0;
 
-	writel(0, &ccm->spi0_clk_cfg);
-	clrbits_le32(&ccm->ahb_gate0, (1 << AHB_GATE_OFFSET_SPI0));
+	writel(0, spi1 ? &ccm->spi1_clk_cfg : &ccm->spi0_clk_cfg);
+	clrbits_le32(&ccm->ahb_gate0, (1 << (spi1 ? AHB_GATE_OFFSET_SPI1 : AHB_GATE_OFFSET_SPI0)));
 
 #if defined(CONFIG_MACH_SUN6I) || defined(CONFIG_MACH_SUN8I) || \
 	defined(CONFIG_MACH_SUN9I) || defined(CONFIG_MACH_SUN50I)
 	clrbits_le32(&ccm->ahb_reset0_cfg,
-		(1 << AHB_GATE_OFFSET_SPI0));
+		(1 << (spi1 ? AHB_GATE_OFFSET_SPI1 : AHB_GATE_OFFSET_SPI0)));
 #endif
 }
 
@@ -272,8 +281,6 @@ static int sunxi_spi_probe(struct udevice *bus)
 
 				/* for using GPIO directly in SPI driver */
 				dm_gpio_free(bus, &priv->cs_gpios[i]);
-			} else {
-				priv->cs_gpios[i].dev = NULL;
 			}
 		}
 	} else {
@@ -318,7 +325,7 @@ static int sunxi_spi_release_bus(struct udevice *dev)
 
 	clrbits_le32(&priv->regs->glb_ctl, SUNXI_SPI_CTL_MASTER |
 		SUNXI_SPI_CTL_ENABLE);
-	sunxi_spi_disable_clock();
+	sunxi_spi_disable_clock(bus);
 
 	return 0;
 }

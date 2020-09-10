@@ -53,6 +53,7 @@
 	aliases {
 		ethernet0 = &emac;
 		spi0 = &spi0;
+		spi1 = &spi1;
 		i2c0 = &i2c0;
 	};
 
@@ -490,6 +491,14 @@
 		spi0: spi@01c68000 {
 			compatible = "allwinner,sun8i-h3-spi";
 			reg = <0x01c68000 0x1000>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi1: spi@01c69000 {
+			compatible = "allwinner,sun8i-h3-spi";
+			reg = <0x01c69000 0x1000>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;

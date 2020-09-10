@@ -45,37 +45,9 @@
 / {
 	model = "FriendlyElec NanoPi NEO";
 	compatible = "friendlyarm,nanopi-neo", "allwinner,sun8i-h3";
-
-	gpio_keys {
-		compatible = "gpio-keys";
-		pinctrl-names = "default";
-		pinctrl-0 = <&sw_npi_neo_oled>;
-
-		sw1 {
-			label = "OLED_K1";
-			gpios = <&pio 0 0 GPIO_ACTIVE_HIGH>;
-		};
-
-		sw2 {
-			label = "OLED_K2";
-			gpios = <&pio 0 2 GPIO_ACTIVE_HIGH>;
-		};
-
-		sw3 {
-			label = "OLED_K3";
-			gpios = <&pio 0 3 GPIO_ACTIVE_HIGH>;
-		};
-	};
 };
 
 &pio {
-	sw_npi_neo_oled: key_pins@0 {
-		allwinner,pins = "PA0", "PA2", "PA3";
-		allwinner,function = "gpio_in";
-		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
-		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
-	};
-
 	spi0_pins: spi0@0 {
 		allwinner,pins = "PC0", "PC1", "PC2";
 		allwinner,function = "spi0";
@@ -85,6 +57,20 @@
 
 	spi0_cs_pins: spi0_cs_pins {
 		allwinner,pins = "PC3", "PA6", "PG7";
+		allwinner,function = "gpio_out";
+		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
+		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
+	};
+
+	spi1_pins: spi1@0 {
+		allwinner,pins = "PA15", "PA16", "PA14";
+		allwinner,function = "spi1";
+		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
+		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
+	};
+
+	spi1_cs_pins: spi1_cs_pins {
+		allwinner,pins = "PA13";
 		allwinner,function = "gpio_out";
 		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
 		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
@@ -145,6 +131,21 @@
 	spi-ts@2 {
 		compatible = "xpt2046";
 		reg = <2>;
+	};
+};
+
+&spi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi1_pins>, <&spi1_cs_pins>;
+	cs-gpios = <&pio 0 13 GPIO_ACTIVE_HIGH>, <0>;
+	spi-max-frequency = <24000000>;
+	/* spi-activate-delay = <1>; */
+	/* spi-deactivate-delay = <1>; */
+	status = "okay";
+
+	spi-tft@0 {
+		compatible = "sitronix,st7735s";
+		reg = <0>;
 	};
 };
 
